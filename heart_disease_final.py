@@ -125,6 +125,20 @@ test  = encode_race(test)
 race_cols = [c for c in train.columns if c.startswith("race_")]
 print(f"\n[3] Race one-hot encoded: {race_cols}")
 
+ECG_SOURCES = {"heart_kaggle", "uci_multicentre", "cleveland"}
+
+def add_source_flag(df_split):
+    df_split = df_split.copy()
+    df_split["is_ecg_source"] = df_split["source"].isin(ECG_SOURCES).astype(float)
+    return df_split
+
+train = add_source_flag(train)
+val   = add_source_flag(val)
+test  = add_source_flag(test)
+
+print(f"    is_ecg_source added — ECG rows in train: "
+      f"{train['is_ecg_source'].sum():.0f} / {len(train)}")
+
 # ══════════════════════════════════════════════════════════════════
 # 4. BUILD FEATURE MATRIX
 # ══════════════════════════════════════════════════════════════════
