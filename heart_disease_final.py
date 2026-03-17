@@ -52,7 +52,7 @@ RANDOM_SEED = 42
 np.random.seed(RANDOM_SEED)
 
 # ── Config ─────────────────────────────────────────────────────────
-DATA_PATH  = "data/heart_unified_clean.csv"   # update if in a different folder
+DATA_PATH = "data/heart_unified_v2.csv"  # update if in a different folder
 N_TRIALS   = 100                          # increase to 200 for better tuning
 OUTPUT_DIR = "."                          # where plots and models are saved
 

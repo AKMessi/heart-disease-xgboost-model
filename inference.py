@@ -92,7 +92,7 @@ print(f"  Threshold : {THRESHOLD:.2f}  (F2-optimised)")
 # CRITICAL: must use identical random_state and split fractions as
 # training script so we only ever touch patients the model never saw.
 
-df = pd.read_csv("data/heart_unified_clean.csv")
+df = pd.read_csv("data/heart_unified_v2.csv")
 df = df.drop(columns=["split"], errors="ignore")
 
 train_val, test_df = train_test_split(
