@@ -150,7 +150,7 @@ This produces `data/heart_unified_v2.csv` - the full 70,623-row dataset.
 python heart_disease_final.py
 ```
 
-Expected runtime: 25â€“45 minutes (dominated by Optuna tuning).
+Expected runtime: 25-45 minutes (dominated by Optuna tuning).
 Saves `heart_xgboost_final.json`, calibrated model, SHAP plots,
 and evaluation curves.
 
@@ -159,7 +159,7 @@ and evaluation curves.
 ## Key limitations
 
 - **Cross-sectional labels** - training data captures disease that exists
-  at survey time, not disease that will develop in 5â€“10 years. True early
+  at survey time, not disease that will develop in 5-10 years. True early
   prediction requires longitudinal cohort data (UK Biobank, survival models).
 - **Lab values missing for 76% of rows** - cholesterol, BP, and glucose
   unavailable for BRFSS patients. The model uses lifestyle proxies but
