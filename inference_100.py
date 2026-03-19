@@ -78,9 +78,9 @@ print(f"\n{B}{'='*65}{X}")
 print(f"{B} 100-PATIENT INFERENCE RUN{X}")
 print(f"{B}{'='*65}{X}")
 
-calibrated  = joblib.load("heart_model_calibrated.pkl")
-FEATURE_COLS= joblib.load("feature_cols.pkl")
-THRESHOLD   = joblib.load("threshold.pkl")
+calibrated  = joblib.load("models/heart_model_calibrated.pkl")
+FEATURE_COLS= joblib.load("models/feature_cols.pkl")
+THRESHOLD   = joblib.load("models/threshold.pkl")
 
 print(f"\n✓ Model loaded")
 print(f"  Features  : {len(FEATURE_COLS)}")
