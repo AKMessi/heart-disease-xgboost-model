@@ -16,7 +16,7 @@ recordings from PTB-XL.
 | PR-AUC (test set) | 0.651 |
 | Precision at threshold | 91.3% |
 | Recall at threshold | 84.0% |
-| False alarms â€” 100-patient run | 2 / 50 healthy patients |
+| False alarms - 100-patient run | 2 / 50 healthy patients |
 | Missed disease cases | 4 / 50 disease patients |
 
 ---
@@ -27,7 +27,7 @@ recordings from PTB-XL.
 
 ROC curve (AUC 0.877), Precision-Recall curve (PR-AUC 0.651), and
 calibration curve before and after Platt scaling on the validation set.
-Val and test curves nearly overlap â€” no overfitting.
+Val and test curves nearly overlap - no overfitting.
 
 ---
 
@@ -71,20 +71,20 @@ HIGH RISK.
 
 XGBoost binary classifier (`binary:logistic`) with:
 
-- **Optuna** hyperparameter tuning â€” 100 trials, 3-fold stratified CV,
+- **Optuna** hyperparameter tuning - 100 trials, 3-fold stratified CV,
   PR-AUC objective
-- **Platt scaling** calibration â€” maps raw scores to trustworthy
+- **Platt scaling** calibration - maps raw scores to trustworthy
   probabilities (Brier score 0.08)
-- **F2-optimised threshold** â€” weights recall 2Ã— over precision, correct
+- **F2-optimised threshold** - weights recall 2x over precision, correct
   for medical screening where missing a case is worse than a false alarm
-- **SHAP explainability** â€” per-patient waterfall plots for every
+- **SHAP explainability** - per-patient waterfall plots for every
   inference run
 
 The model operates on two evidence pathways simultaneously:
 
-- **ECG pathway** â€” T-wave amplitude, ST depression, QRS duration,
+- **ECG pathway** - T-wave amplitude, ST depression, QRS duration,
   PR interval, max heart rate (used when PTB-XL ECG data is available)
-- **Lifestyle pathway** â€” age, sex, BMI, smoking, diabetes, stroke,
+- **Lifestyle pathway** - age, sex, BMI, smoking, diabetes, stroke,
   self-rated general health, comorbidities (used for survey patients)
 
 ---
@@ -126,15 +126,15 @@ summary grid to `inference_100/`.
 
 Download the following and place in the locations shown:
 
-- **BRFSS 2020** â€” `heart_2020_cleaned.csv` from Kaggle
+- **BRFSS 2020** - `heart_2020_cleaned.csv` from Kaggle
   (Personal Key Indicators of Heart Disease)
-- **PTB-XL** â€” from PhysioNet (free, no credentialing required):
+- **PTB-XL** - from PhysioNet (free, no credentialing required):
   `ptb-xl-a-large-publicly-available-electrocardiography-dataset-1.0.3`
-  â†’ place in `raw/ptb-xl/`
-- **PTB-XL+** â€” from PhysioNet:
+  → place in `raw/ptb-xl/`
+- **PTB-XL+** - from PhysioNet:
   `ptb-xl-a-comprehensive-electrocardiographic-feature-dataset-1.0.1`
-  â†’ place in `raw/ptb-xl/`
-- **Framingham + UCI + Cleveland** â€” already in `data/heart_unified_clean.csv`
+  → place in `raw/ptb-xl/`
+- **Framingham + UCI + Cleveland** - already in `data/heart_unified_clean.csv`
 
 Then run the integration script:
 
@@ -142,7 +142,7 @@ Then run the integration script:
 python integrate_ptbxl.py
 ```
 
-This produces `data/heart_unified_v2.csv` â€” the full 70,623-row dataset.
+This produces `data/heart_unified_v2.csv` - the full 70,623-row dataset.
 
 **4. Retrain the model**
 
@@ -158,13 +158,13 @@ and evaluation curves.
 
 ## Key limitations
 
-- **Cross-sectional labels** â€” training data captures disease that exists
+- **Cross-sectional labels** - training data captures disease that exists
   at survey time, not disease that will develop in 5â€“10 years. True early
   prediction requires longitudinal cohort data (UK Biobank, survival models).
-- **Lab values missing for 76% of rows** â€” cholesterol, BP, and glucose
+- **Lab values missing for 76% of rows** - cholesterol, BP, and glucose
   unavailable for BRFSS patients. The model uses lifestyle proxies but
   cannot replace a blood panel.
-- **Not validated for clinical use** â€” this is a research and learning
+- **Not validated for clinical use** - this is a research and learning
   project. Do not use for clinical decision-making.
 
 ---
@@ -172,14 +172,14 @@ and evaluation curves.
 ## Repository files
 
 ```
-heart_disease_final.py      training pipeline â€” load, tune, train,
+heart_disease_final.py      training pipeline - load, tune, train,
                             calibrate, evaluate, SHAP, save
-integrate_ptbxl.py          PTB-XL ETL â€” parse ECG labels, join features,
+integrate_ptbxl.py          PTB-XL ETL - parse ECG labels, join features,
                             harmonise to unified schema
 inference_100.py            run model on 100 held-out patients with SHAP
                             waterfall plots per patient
 heart_xgboost_final.json    trained XGBoost model (raw)
-heart_model_calibrated.pkl  trained model with Platt calibration â€” use this
+heart_model_calibrated.pkl  trained model with Platt calibration - use this
 feature_cols.pkl            list of 68 feature names in correct order
 threshold.pkl               optimal decision threshold (F2-tuned)
 requirements.txt            pinned dependencies
