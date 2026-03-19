@@ -4,7 +4,7 @@ An end-to-end machine learning pipeline for cardiac risk screening,
 trained on 70,623 patients across 5 datasets including clinical ECG
 recordings from PTB-XL.
 
-![Project metrics progression](launch_card4_table.png)
+![Project metrics progression](assets/launch_card4_table.png)
 
 ---
 
@@ -23,7 +23,7 @@ recordings from PTB-XL.
 
 ## Model evaluation
 
-![Evaluation curves](evaluation_final.png)
+![Evaluation curves](assets/evaluation_final.png)
 
 ROC curve (AUC 0.877), Precision-Recall curve (PR-AUC 0.651), and
 calibration curve before and after Platt scaling on the validation set.
@@ -33,7 +33,7 @@ Val and test curves nearly overlap â€” no overfitting.
 
 ## What the model learned
 
-![SHAP feature importance](shap_summary.png)
+![SHAP feature importance](assets/shap_summary.png)
 
 SHAP values show each feature's contribution to individual predictions.
 Red = high feature value raises risk. Blue = low value lowers risk.
@@ -58,7 +58,7 @@ The model uses two evidence pathways depending on what data is available.
 
 ## 50-patient inference run
 
-![50-patient results grid](launch_card2_50patients.png)
+![50-patient results grid](assets/launch_card2_50patients.png)
 
 Each bar is one patient. Bar height = predicted risk score. Red background
 = disease (ground truth). Green background = healthy (ground truth). White
