@@ -1,17 +1,17 @@
 # ══════════════════════════════════════════════════════════════════
-# HEART DISEASE — 50-PATIENT INFERENCE SCRIPT
+# HEART DISEASE — 100-PATIENT INFERENCE SCRIPT
 # ══════════════════════════════════════════════════════════════════
 #
-# Runs the trained + calibrated model on 50 held-out test patients.
+# Runs the trained + calibrated model on 100 held-out test patients.
 # Produces:
 #   - Terminal results table with colour-coded risk scores
 #   - Overall metrics (AUC, PR-AUC, accuracy at threshold)
-#   - Summary grid plot — all 50 patients at a glance
+#   - Summary grid plot — all 100 patients at a glance
 #   - SHAP waterfall for every patient — saved individually
 #   - Error analysis — deep dive on wrong predictions
 #
-# Run: python inference_50.py
-# Requires (same folder): heart_unified_clean.csv
+# Run: python inference_100.py
+# Requires (same folder): heart_unified_v2.csv
 #                         heart_model_calibrated.pkl
 #                         feature_cols.pkl
 #                         threshold.pkl
@@ -75,7 +75,7 @@ class CalibratedModel:
 # ══════════════════════════════════════════════════════════════════
 
 print(f"\n{B}{'='*65}{X}")
-print(f"{B} 50-PATIENT INFERENCE RUN{X}")
+print(f"{B} 100-PATIENT INFERENCE RUN{X}")
 print(f"{B}{'='*65}{X}")
 
 calibrated  = joblib.load("heart_model_calibrated.pkl")
@@ -104,9 +104,9 @@ train_df, val_df = train_test_split(
 print(f"\n✓ Split reproduced — test set: {len(test_df):,} rows")
 
 # ══════════════════════════════════════════════════════════════════
-# 3 — SELECT 50 PATIENTS FROM TEST SET
+# 3 — SELECT 100 PATIENTS FROM TEST SET
 # ══════════════════════════════════════════════════════════════════
-# Stratified 25 positive / 25 negative so we can properly evaluate
+# Stratified 50 positive / 50 negative so we can properly evaluate
 # both sides. All from test set — never seen during training.
 
 ECG_SOURCES = {"heart_kaggle", "uci_multicentre", "cleveland"}
@@ -126,8 +126,8 @@ test_df = prepare(test_df)
 pos_pool = test_df[test_df["target"] == 1]
 neg_pool = test_df[test_df["target"] == 0]
 
-sample_pos = pos_pool.sample(25, random_state=RANDOM_SEED)
-sample_neg = neg_pool.sample(25, random_state=RANDOM_SEED)
+sample_pos = pos_pool.sample(50, random_state=RANDOM_SEED)
+sample_neg = neg_pool.sample(50, random_state=RANDOM_SEED)
 patients   = pd.concat([sample_pos, sample_neg])\
                .sample(frac=1, random_state=RANDOM_SEED)\
                .reset_index(drop=True)
@@ -142,9 +142,9 @@ for col in FEATURE_COLS:
 
 X_patients = patients[FEATURE_COLS]
 
-print(f"✓ 50 patients selected from test set")
-print(f"  Positive (disease) : 25")
-print(f"  Negative (healthy) : 25")
+print(f"✓ 100 patients selected from test set")
+print(f"  Positive (disease) : 50")
+print(f"  Negative (healthy) : 50")
 print(f"  Age range          : {patients['age'].min():.0f}–{patients['age'].max():.0f}"
       f"  (mean {patients['age'].mean():.1f})")
 print(f"  Sources            : {patients['source'].value_counts().to_dict()}")
@@ -211,8 +211,8 @@ acc     = correct / len(patients)
 cm = confusion_matrix(ground_truth, predictions)
 tn, fp, fn, tp = cm.ravel()
 
-print(f"\n{B}METRICS ON 50-PATIENT SAMPLE{X}")
-print(f"  Accuracy        : {correct}/50  ({acc:.0%})")
+print(f"\n{B}METRICS ON 100-PATIENT SAMPLE{X}")
+print(f"  Accuracy        : {correct}/100  ({acc:.0%})")
 print(f"  AUC-ROC         : {auc_roc:.3f}")
 print(f"  PR-AUC          : {pr_auc:.3f}")
 print(f"\n  Confusion matrix at threshold {THRESHOLD:.2f}:")
@@ -230,7 +230,7 @@ print(f"\n{classification_report(ground_truth, predictions, target_names=['Healt
 # ══════════════════════════════════════════════════════════════════
 
 errors = [(i, probs[i], predictions[i], ground_truth[i], patients.iloc[i])
-          for i in range(50) if predictions[i] != ground_truth[i]]
+          for i in range(100) if predictions[i] != ground_truth[i]]
 
 print(f"\n{B}ERROR ANALYSIS — {len(errors)} wrong predictions{X}")
 print(f"{'─'*65}")
@@ -255,20 +255,20 @@ for i, prob, pred, truth, pt in errors:
         print(f"  ⚠ ECG-source patient — missing BRFSS lifestyle features")
 
 # ══════════════════════════════════════════════════════════════════
-# 8 — SUMMARY GRID PLOT (all 50 at a glance)
+# 8 — SUMMARY GRID PLOT (all 100 at a glance)
 # ══════════════════════════════════════════════════════════════════
 
-os.makedirs("inference_50", exist_ok=True)
+os.makedirs("inference_100", exist_ok=True)
 
 fig = plt.figure(figsize=(24, 20))
-fig.suptitle("50-Patient Risk Summary — Calibrated Scores\n"
+fig.suptitle("100-Patient Risk Summary — Calibrated Scores\n"
              "Green bg = Healthy truth | Red bg = Disease truth | "
              "✓ = correct | ✗ = wrong",
              fontsize=12, fontweight="bold", y=0.98)
 
-gs = gridspec.GridSpec(5, 10, figure=fig, hspace=0.6, wspace=0.35)
+gs = gridspec.GridSpec(10, 10, figure=fig, hspace=0.6, wspace=0.35)
 
-for i in range(50):
+for i in range(100):
     ax   = fig.add_subplot(gs[i // 10, i % 10])
     prob = probs[i]
     pred = predictions[i]
@@ -299,16 +299,16 @@ for i in range(50):
         color="#C0392B" if not match else "#2C3E50"
     )
 
-plt.savefig("inference_50/summary_50_patients.png",
+plt.savefig("inference_100/summary_100_patients.png",
             dpi=130, bbox_inches="tight")
 plt.close()
-print(f"\n✓ Summary grid saved → inference_50/summary_50_patients.png")
+print(f"\n✓ Summary grid saved → inference_100/summary_100_patients.png")
 
 # ══════════════════════════════════════════════════════════════════
 # 9 — SHAP WATERFALL PLOTS (one per patient)
 # ══════════════════════════════════════════════════════════════════
 
-print(f"\n{B}Computing SHAP values for all 50 patients...{X}")
+print(f"\n{B}Computing SHAP values for all 100 patients...{X}")
 print(f"  (this takes ~60 seconds)")
 
 # Use raw XGBoost model for SHAP — TreeExplainer is exact for trees
@@ -316,7 +316,7 @@ base_model  = calibrated.base
 explainer   = shap.TreeExplainer(base_model)
 shap_values = explainer(X_patients)
 
-for i in range(50):
+for i in range(100):
     truth  = ground_truth[i]
     prob   = probs[i]
     pred   = predictions[i]
@@ -337,25 +337,25 @@ for i in range(50):
         fontsize=9, pad=10, color=title_c
     )
     plt.tight_layout()
-    fname = f"inference_50/p{i+1:02d}_waterfall.png"
+    fname = f"inference_100/p{i+1:02d}_waterfall.png"
     plt.savefig(fname, dpi=120, bbox_inches="tight")
     plt.close()
 
     if (i+1) % 10 == 0:
-        print(f"  Saved {i+1}/50 waterfall plots...")
+        print(f"  Saved {i+1}/100 waterfall plots...")
 
-print(f"✓ All 50 waterfall plots saved → inference_50/")
+print(f"✓ All 100 waterfall plots saved → inference_100/")
 
 # ══════════════════════════════════════════════════════════════════
 # 10 — RISK DISTRIBUTION PLOT
 # ══════════════════════════════════════════════════════════════════
 
 fig, axes = plt.subplots(1, 3, figsize=(15, 5))
-fig.suptitle("Risk Score Distribution — 50 Patients", fontsize=12, fontweight="bold")
+fig.suptitle("Risk Score Distribution — 100 Patients", fontsize=12, fontweight="bold")
 
 # Histogram split by truth
-dis_probs = [probs[i] for i in range(50) if ground_truth[i] == 1]
-hlth_probs= [probs[i] for i in range(50) if ground_truth[i] == 0]
+dis_probs = [probs[i] for i in range(100) if ground_truth[i] == 1]
+hlth_probs= [probs[i] for i in range(100) if ground_truth[i] == 0]
 
 axes[0].hist(hlth_probs, bins=12, color="#1D9E75", alpha=0.7, label="Healthy (truth)")
 axes[0].hist(dis_probs,  bins=12, color="#E24B4A", alpha=0.7, label="Disease (truth)")
@@ -370,7 +370,7 @@ axes[0].grid(True, alpha=0.3)
 # Scatter: sorted by predicted risk, coloured by truth
 sorted_idx = np.argsort(probs)
 colours    = ["#E24B4A" if ground_truth[i]==1 else "#1D9E75" for i in sorted_idx]
-axes[1].bar(range(50), probs[sorted_idx], color=colours, width=0.8)
+axes[1].bar(range(100), probs[sorted_idx], color=colours, width=0.8)
 axes[1].axhline(THRESHOLD, color="black", lw=1.5, linestyle="--",
                 label=f"Threshold {THRESHOLD:.2f}")
 axes[1].set_xlabel("Patients (sorted by risk)")
@@ -395,41 +395,41 @@ if len(bin_means) >= 2:
     axes[2].plot([0,1],[0,1],"k--",lw=1,alpha=0.5,label="Perfect")
     axes[2].set_xlabel("Mean predicted probability")
     axes[2].set_ylabel("Actual positive rate")
-    axes[2].set_title("Calibration (50 patients)")
+    axes[2].set_title("Calibration (100 patients)")
     axes[2].legend(fontsize=9)
     axes[2].grid(True, alpha=0.3)
     axes[2].set_xlim(0, 1); axes[2].set_ylim(0, 1)
 else:
     axes[2].text(0.5, 0.5, "Too few bins\nfor calibration",
                  ha="center", va="center", transform=axes[2].transAxes)
-    axes[2].set_title("Calibration (50 patients)")
+    axes[2].set_title("Calibration (100 patients)")
 
 plt.tight_layout()
-plt.savefig("inference_50/risk_distribution.png", dpi=140, bbox_inches="tight")
+plt.savefig("inference_100/risk_distribution.png", dpi=140, bbox_inches="tight")
 plt.close()
-print(f"\n✓ Risk distribution plot saved → inference_50/risk_distribution.png")
+print(f"\n✓ Risk distribution plot saved → inference_100/risk_distribution.png")
 
 # ══════════════════════════════════════════════════════════════════
 # 11 — FINAL SUMMARY
 # ══════════════════════════════════════════════════════════════════
 
-fp_count = sum(1 for i in range(50) if predictions[i]==1 and ground_truth[i]==0)
-fn_count = sum(1 for i in range(50) if predictions[i]==0 and ground_truth[i]==1)
+fp_count = sum(1 for i in range(100) if predictions[i]==1 and ground_truth[i]==0)
+fn_count = sum(1 for i in range(100) if predictions[i]==0 and ground_truth[i]==1)
 
 print(f"\n{B}{'='*65}{X}")
 print(f"{B} FINAL SUMMARY{X}")
 print(f"{B}{'='*65}{X}")
-print(f"  Patients evaluated  : 50  (25 disease / 25 healthy)")
-print(f"  Correct predictions : {correct}/50  ({acc:.0%})")
+print(f"  Patients evaluated  : 100  (50 disease / 50 healthy)")
+print(f"  Correct predictions : {correct}/100  ({acc:.0%})")
 print(f"  AUC-ROC             : {auc_roc:.3f}")
 print(f"  PR-AUC              : {pr_auc:.3f}")
 print(f"\n  At threshold {THRESHOLD:.2f}:")
-print(f"  True positives  (caught disease)   : {tp}/25  ({tp/25:.0%})")
-print(f"  True negatives  (cleared healthy)  : {tn}/25  ({tn/25:.0%})")
+print(f"  True positives  (caught disease)   : {tp}/50  ({tp/50:.0%})")
+print(f"  True negatives  (cleared healthy)  : {tn}/50  ({tn/50:.0%})")
 print(f"  False positives (false alarms)     : {fp_count}")
 print(f"  False negatives (missed disease)   : {fn_count}")
-print(f"\n  Outputs saved to: inference_50/")
-print(f"  ├─ summary_50_patients.png   (grid overview)")
+print(f"\n  Outputs saved to: inference_100/")
+print(f"  ├─ summary_100_patients.png   (grid overview)")
 print(f"  ├─ risk_distribution.png     (score analysis)")
-print(f"  └─ p01_waterfall.png ... p50_waterfall.png")
+print(f"  └─ p01_waterfall.png ... p100_waterfall.png")
 print(f"{B}{'='*65}{X}\n")
