@@ -1,14 +1,19 @@
 # Heart Disease Risk Prediction
 
-An end-to-end machine learning pipeline for cardiac risk screening,
-trained on 70,623 patients across 5 datasets including clinical ECG
-recordings from PTB-XL.
+Two complementary models for cardiac risk assessment, built from scratch:
+a cross-sectional XGBoost classifier and a longitudinal Cox survival model.
 
 ![Project metrics progression](assets/launch_card4_table.png)
 
 ---
 
-## Results
+## Part 1 -- XGBoost classifier (cross-sectional)
+
+Predicts whether a patient currently has heart disease.
+Trained on 70,623 patients across 5 datasets including clinical ECG
+recordings from PTB-XL.
+
+### Results
 
 | Metric | Value |
 |--------|-------|
@@ -16,28 +21,24 @@ recordings from PTB-XL.
 | PR-AUC (test set) | 0.651 |
 | Precision at threshold | 91.3% |
 | Recall at threshold | 84.0% |
-| False alarms - 100-patient run | 2 / 50 healthy patients |
+| False alarms -- 100-patient run | 2 / 50 healthy patients |
 | Missed disease cases | 4 / 50 disease patients |
 
----
-
-## Model evaluation
+### Evaluation
 
 ![Evaluation curves](assets/evaluation_final.png)
 
 ROC curve (AUC 0.877), Precision-Recall curve (PR-AUC 0.651), and
 calibration curve before and after Platt scaling on the validation set.
-Val and test curves nearly overlap - no overfitting.
+Val and test curves nearly overlap -- no overfitting.
 
----
-
-## What the model learned
+### What the model learned
 
 ![SHAP feature importance](assets/shap_summary.png)
 
 SHAP values show each feature's contribution to individual predictions.
 Red = high feature value raises risk. Blue = low value lowers risk.
-The model uses two evidence pathways depending on what data is available.
+The model uses two evidence pathways depending on data availability.
 
 **Top 10 predictors by mean |SHAP|:**
 
@@ -54,42 +55,35 @@ The model uses two evidence pathways depending on what data is available.
 | 9 | ST depression | ECG |
 | 10 | QRS duration | ECG |
 
----
-
-## 50-patient inference run
+### 50-patient inference run
 
 ![50-patient results grid](assets/launch_card2_50patients.png)
 
-Each bar is one patient. Bar height = predicted risk score. Red background
-= disease (ground truth). Green background = healthy (ground truth). White
-dashed line = decision threshold (0.11). Bars above the line were flagged
-HIGH RISK.
+Each bar is one patient. Bar height = predicted risk score.
+Red background = disease (ground truth). Green background = healthy.
+White dashed line = decision threshold (0.11).
+Bars above the line were flagged HIGH RISK.
 
----
-
-## Model architecture
+### Architecture
 
 XGBoost binary classifier (`binary:logistic`) with:
 
-- **Optuna** hyperparameter tuning - 100 trials, 3-fold stratified CV,
+- **Optuna** hyperparameter tuning -- 100 trials, 3-fold stratified CV,
   PR-AUC objective
-- **Platt scaling** calibration - maps raw scores to trustworthy
+- **Platt scaling** calibration -- maps raw scores to calibrated
   probabilities (Brier score 0.08)
-- **F2-optimised threshold** - weights recall 2x over precision, correct
-  for medical screening where missing a case is worse than a false alarm
-- **SHAP explainability** - per-patient waterfall plots for every
-  inference run
+- **F2-optimised threshold** -- weights recall 2x over precision,
+  correct for screening where missing a case is worse than a false alarm
+- **SHAP explainability** -- per-patient waterfall plots for every run
 
-The model operates on two evidence pathways simultaneously:
+Two evidence pathways run simultaneously:
 
-- **ECG pathway** - T-wave amplitude, ST depression, QRS duration,
-  PR interval, max heart rate (used when PTB-XL ECG data is available)
-- **Lifestyle pathway** - age, sex, BMI, smoking, diabetes, stroke,
-  self-rated general health, comorbidities (used for survey patients)
+- **ECG pathway** -- T-wave amplitude, ST depression, QRS duration,
+  PR interval, max heart rate (when PTB-XL ECG data is available)
+- **Lifestyle pathway** -- age, sex, BMI, smoking, diabetes, stroke,
+  self-rated health, comorbidities (for survey-only patients)
 
----
-
-## Datasets
+### Datasets
 
 | Dataset | Rows | Type |
 |---------|------|------|
@@ -101,87 +95,146 @@ The model operates on two evidence pathways simultaneously:
 
 ---
 
+## Part 2 -- Survival analysis (10-year CHD risk)
+
+Predicts who will develop coronary heart disease within 10 years.
+Built on the Framingham Heart Study: 4,240 patients, 644 events,
+14 clinical features including cholesterol, blood pressure, and glucose.
+Validated against the published Framingham Risk Score (Wilson 1998, JAMA).
+
+### Results
+
+| Model | C-index | Notes |
+|-------|---------|-------|
+| Random baseline | 0.500 | |
+| XGBoost survival (untuned) | 0.668 | |
+| XGBoost survival (Optuna tuned) | 0.689 | |
+| Cox Proportional Hazards | 0.737 | Best model |
+| Published Framingham Risk Score | ~0.750 | 1998 benchmark |
+
+Cox outperforms XGBoost on this dataset -- correct and expected.
+With 515 training events, gradient boosting cannot learn non-linear
+interactions that justify tree depth. Cox's linear assumption is
+approximately correct for this population and feature set.
+
+### Framingham Risk Score validation
+
+![Framingham comparison](assets/framingham_comparison.png)
+
+7 out of 7 coefficient directions match the published Wilson 1998
+Framingham Risk Score. Age, sex, cholesterol, systolic BP, smoking,
+diabetes, and BP medication all point the same direction as the
+original paper. Our Cox model essentially reproduces the 1998 FRS
+from the data, with a C-index of 0.737 vs the published ~0.750.
+
+### SHAP feature importance (survival)
+
+![SHAP survival summary](assets/shap_survival_summary.png)
+
+Age dominates. Systolic BP is a clear second -- a key difference
+from the lifestyle-only classifier where self-rated general health
+ranked second. When blood pressure is actually measured, it becomes
+the second strongest predictor of cardiac events. This validates
+both models simultaneously.
+
+### Model comparison
+
+![Model comparison](assets/model_comparison.png)
+
+Left: Cox vs XGBoost risk score agreement on test patients, coloured
+by CHD outcome. Right: XGBoost score distribution by outcome showing
+separation between CHD and no-CHD groups.
+
+### Patient risk calculator
+
+The pipeline produces a full risk report per patient combining
+Cox 10-year probability, published FRS comparison, and SHAP waterfall.
+
+![Example patient report -- P4](assets/p4_report.png)
+
+Patient P4: 50-year-old male, heavy smoker, prior stroke, diabetic,
+systolic BP 170 mmHg. Cox model: 77% 10-year CHD risk.
+Published FRS: 31%. The gap exists because the 1998 point system
+caps out at 31% and does not model prior stroke as a feature.
+Our Cox model has no cap and includes stroke explicitly.
+
+### Key findings
+
+- Systolic BP is the dominant modifiable risk factor after age --
+  consistent with cardiovascular research since 1998
+- Smoking dose (cigarettes per day) matters more than binary smoker
+  status -- the signal is dose-dependent, not binary
+- BMI and resting heart rate add essentially no signal once BP,
+  cholesterol, and glucose are in the model
+- Adding 7 extra features beyond the core FRS set moves C-index
+  by only 0.001 -- the 6 published FRS features capture almost
+  all predictable signal in this dataset
+
+---
+
 ## How to run
 
-**1. Install dependencies**
+**Install dependencies**
 
 ```bash
 pip install -r requirements.txt
+pip install lifelines
 ```
 
-**2. Run inference immediately (no retraining needed)**
+**Run the classifier -- no retraining needed**
 
-The trained model is included in the repo. Run inference on 100
-held-out test patients right away:
+The trained model is included. Run inference on 100 held-out patients:
 
 ```bash
 python inference_100.py
 ```
 
-Requires `data/heart_unified_v2.csv`. See step 3 if you need to
-regenerate it. Outputs 100 individual SHAP waterfall plots and a
-summary grid to `inference_100/`.
+Requires `data/heart_unified_v2.csv`. Outputs 100 individual SHAP
+waterfall plots and a summary grid to `inference_100/`.
 
-**3. Prepare the full dataset (only needed to retrain)**
-
-Download the following and place in the locations shown:
-
-- **BRFSS 2020** - `heart_2020_cleaned.csv` from Kaggle
-  (Personal Key Indicators of Heart Disease)
-- **PTB-XL** - from PhysioNet (free, no credentialing required):
-  `ptb-xl-a-large-publicly-available-electrocardiography-dataset-1.0.3`
-  → place in `raw/ptb-xl/`
-- **PTB-XL+** - from PhysioNet:
-  `ptb-xl-a-comprehensive-electrocardiographic-feature-dataset-1.0.1`
-  → place in `raw/ptb-xl/`
-- **Framingham + UCI + Cleveland** - already in `data/heart_unified_clean.csv`
-
-Then run the integration script:
+**Run the survival analysis**
 
 ```bash
-python integrate_ptbxl.py
+python survival_analysis.py
 ```
 
-This produces `data/heart_unified_v2.csv` - the full 70,623-row dataset.
+Requires `framingham_heart_study.csv` in the repo root.
+Outputs saved to `survival_outputs/`.
 
-**4. Retrain the model**
+**Retrain the classifier (optional, ~25-45 minutes)**
 
 ```bash
-python heart_disease_final.py
+python integrate_ptbxl.py       # build unified dataset from raw sources
+python heart_disease_final.py   # retrain with Optuna tuning
 ```
-
-Expected runtime: 25-45 minutes (dominated by Optuna tuning).
-Saves `heart_xgboost_final.json`, calibrated model, SHAP plots,
-and evaluation curves.
 
 ---
 
-## Key limitations
+## Repository structure
 
-- **Cross-sectional labels** - training data captures disease that exists
-  at survey time, not disease that will develop in 5-10 years. True early
-  prediction requires longitudinal cohort data (UK Biobank, survival models).
-- **Lab values missing for 76% of rows** - cholesterol, BP, and glucose
-  unavailable for BRFSS patients. The model uses lifestyle proxies but
-  cannot replace a blood panel.
-- **Not validated for clinical use** - this is a research and learning
-  project. Do not use for clinical decision-making.
+```
+heart_disease_final.py    classifier training pipeline
+integrate_ptbxl.py        PTB-XL ECG integration ETL
+inference_100.py          100-patient inference with SHAP waterfalls
+survival_analysis.py      survival analysis: Cox PH, XGBoost, SHAP,
+                          Framingham comparison, patient risk calculator
+requirements.txt          pinned dependencies
+data/                     curated datasets
+models/                   trained classifier model files (ready to use)
+assets/                   all evaluation plots, SHAP plots, patient reports
+```
 
 ---
 
-## Repository files
+## Limitations
 
-```
-heart_disease_final.py      training pipeline - load, tune, train,
-                            calibrate, evaluate, SHAP, save
-integrate_ptbxl.py          PTB-XL ETL - parse ECG labels, join features,
-                            harmonise to unified schema
-inference_100.py            run model on 100 held-out patients with SHAP
-                            waterfall plots per patient
-heart_xgboost_final.json    trained XGBoost model (raw)
-heart_model_calibrated.pkl  trained model with Platt calibration - use this
-feature_cols.pkl            list of 68 feature names in correct order
-threshold.pkl               optimal decision threshold (F2-tuned)
-requirements.txt            pinned dependencies
-data/                       curated datasets
-```
+- **Cross-sectional classifier**: captures disease present at survey
+  time, not disease that will develop in future years. The survival
+  model addresses this for the Framingham cohort specifically.
+- **Lab values**: cholesterol, BP, and glucose are missing for 76%
+  of classifier training rows (BRFSS survey patients). The survival
+  model has full lab values for all Framingham patients.
+- **Survival sample size**: 644 events in 4,240 patients is sufficient
+  for Cox but not enough for XGBoost to learn non-linear interactions.
+- **Not validated for clinical use**: research and learning project
+  only. Do not use for clinical decision-making.
