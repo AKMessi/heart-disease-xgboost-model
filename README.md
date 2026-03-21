@@ -1,5 +1,7 @@
 # Heart Disease Risk Prediction
 
+**Live app:** [10-Year Cardiac Risk Calculator](https://cardiacrisk.streamlit.app/)
+
 Two complementary models for cardiac risk assessment, built from scratch:
 a cross-sectional XGBoost classifier and a longitudinal Cox survival model.
 
